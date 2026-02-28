@@ -10,6 +10,7 @@ from typing import Callable
 from app.config import AppConfig, get_config
 from app.converters import get_converter
 from app.synthesizers import get_synthesizer
+from app.transformers.toc import TOCEntry, estimate_audio_duration, estimate_timestamps, get_audio_duration
 from app.transformers.voice_script import TransformResult, transform
 
 
@@ -24,6 +25,7 @@ class PipelineResult:
     audio_format: str = "mp3"
     sections_processed: int = 0
     metadata: dict = field(default_factory=dict)
+    table_of_contents: list[TOCEntry] = field(default_factory=list)
 
 
 async def _run_pipeline_async(
@@ -90,6 +92,15 @@ async def _run_pipeline_async(
     else:
         _progress("Done (audio skipped)", 1.0)
 
+    # ── Step 4: Build Table of Contents with timestamps ────────────────
+    if audio_bytes:
+        audio_duration = get_audio_duration(audio_bytes, audio_format)
+        if not audio_duration:
+            audio_duration = estimate_audio_duration(result.voice_script)
+    else:
+        audio_duration = estimate_audio_duration(result.voice_script)
+    toc = estimate_timestamps(raw_markdown, audio_duration)
+
     return PipelineResult(
         filename=filename,
         raw_markdown=raw_markdown,
@@ -98,6 +109,7 @@ async def _run_pipeline_async(
         audio_bytes=audio_bytes,
         audio_format=audio_format,
         sections_processed=result.sections_processed,
+        table_of_contents=toc,
         metadata={
             "model": config.llm.model,
             "tts_provider": config.tts.provider,
