@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.env
+.venv/
+venv/
+.python-version
+*.mp3
+*.wav
+*.pdf
+.streamlit/secrets.toml
