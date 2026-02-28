@@ -162,9 +162,26 @@ if uploaded_file is not None:
             progress_bar.progress(1.0, text="✅ Done!")
 
             # ── Results in tabs ────────────────────────────────────────
-            tab_script, tab_md, tab_audio, tab_meta = st.tabs(
-                ["📝 Voice Script", "📄 Raw Markdown", "🔊 Audio", "ℹ️ Metadata"]
+            tab_toc, tab_script, tab_md, tab_audio, tab_meta = st.tabs(
+                ["📋 Table of Contents", "📝 Voice Script", "📄 Raw Markdown", "🔊 Audio", "ℹ️ Metadata"]
             )
+
+            with tab_toc:
+                toc = result.table_of_contents
+                if toc:
+                    lines: list[str] = []
+                    for entry in toc:
+                        indent = "&nbsp;" * 4 * (entry.level - 1)
+                        mins = int(entry.timestamp_seconds) // 60
+                        secs = int(entry.timestamp_seconds) % 60
+                        timestamp_str = f"{mins:02d}:{secs:02d}"
+                        lines.append(
+                            f"{indent}{'◦' if entry.level > 1 else '•'} "
+                            f"**{entry.title}** — `{timestamp_str}`"
+                        )
+                    st.markdown("\n\n".join(lines), unsafe_allow_html=True)
+                else:
+                    st.info("No headings found in the document.")
 
             with tab_script:
                 st.text_area(
